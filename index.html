@@ -1,58 +1,72 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>搜索引擎选择</title>
-    <!-- 引入 Bootstrap CSS -->
-    <!-- <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"> -->
-    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f8f9fa;
-        }
-        .search-container {
-            width: 80%;
-            max-width: 600px;
-            text-align: center;
-        }
-        .current-time {
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-        .btn-search {
-            margin-left: 10px;
-        }
-    </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="./index.css" rel="stylesheet" />
 </head>
+
 <body>
-    <div class="search-container">
+    <div class="search-container"
+        x-data="{searchTxt:'',searchEngine:'https://www.bing.com/search?q=', search(){window.open(this.searchEngine + encodeURIComponent(this.searchTxt), '_blank');}}">
         <div class="current-time" id="currentTime"></div>
-        <div class="input-group mb-3">
-            <select class="form-select" id="searchEngineSelect">
-                <option value="https://www.bing.com/search?q=">Bing</option>
+        <div class="input-group">
+            <select class="form-select" id="searchEngineSelect" x-model="searchEngine">
+                <option value="https://www.bing.com/search?q=" selected>Bing</option>
                 <option value="https://www.so.com/s?q=">360搜索</option>
                 <option value="https://www.sogou.com/web?query=">搜狗搜索</option>
-                <option value="https://www.google.com/search?q=" selected>Google搜索</option>
+                <option value="https://www.google.com/search?q=">Google搜索</option>
                 <option value="https://yandex.com/search/?text=">Yandex搜索</option>
             </select>
-            <input type="text" class="form-control" placeholder="请输入搜索内容" aria-label="Recipient's username" aria-describedby="basic-addon2" id="searchInput">
+            <input type="text" placeholder="请输入搜索内容" x-model="searchTxt" @keyup.enter="search()" id="searchInput">
             <div class="input-group-append">
-                <button class="btn btn-primary btn-search" type="button" onclick="performSearch()">🔍</button>
+                <button class="btn btn-primary btn-search" type="button" @click="search()">🔍</button>
             </div>
         </div>
+        <div class="week-calc" x-data="weekCalc">
+            <select class="form-select" x-model="currentType">
+                <option value="2" selected>本周双休</option>
+                <option value="1">本周单休</option>
+            </select>
+            <input type="text" placeholder="输入日期" x-model="targetDate" @keyup.enter="calc()">
+            <button class="btn btn-primary btn-search" type="button" @click="calc()">计算</button>
+            <span x-text="result"></span>
+        </div>
     </div>
-
-    <!-- 引入 jQuery 和 Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.min.js"></script>
     <script>
+        document.addEventListener('alpine:init', () => {
+            let now = new Date();
+            const utc = (date)=> {
+                const result = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + (date.getDate());
+                return result;
+            }
+            Alpine.data('weekCalc', () => ({
+                currentType: 2,
+                targetDate: utc(now),
+                result: '',
+                calc() {
+                    let target = new Date(this.targetDate);
+                    console.log('target', utc(target), target.getUTCDay())
+                    if ((target.getUTCDay() + 1) != 6) {
+                        // 不是周六
+                        const offset = 6 - (target.getUTCDay() + 1)
+                        target.setDate(target.getDate()  + offset);
+                    }
+                    const diffDays = Math.round((target - now) / 1000 / 3600 / 24);
+                    console.log('diff', diffDays)
+                    
+                    if (diffDays / 7 % 2 == 0) {
+                        this.result = this.currentType == 2 ? '双休' : '单休'
+                    } else {
+                        this.result = this.currentType == 2 ? '单休' : '双休'
+                    }
+                    this.result = utc(target) + this.result;
+                }
+            }))
+        })
         function updateCurrentTime() {
             const now = new Date();
             document.getElementById('currentTime').textContent = now.toLocaleString();
@@ -60,19 +74,10 @@
 
         setInterval(updateCurrentTime, 1000);
         updateCurrentTime();
-
-        function performSearch() {
-            const searchEngine = document.getElementById('searchEngineSelect').value;
-            const query = document.getElementById('searchInput').value;
-            if (query.trim() === '') {
-                alert('请输入搜索内容');
-                return;
-            }
-            window.open(searchEngine + encodeURIComponent(query), '_blank');
+        function handleKeydown(e) {
+            console.log(e)
         }
     </script>
 </body>
+
 </html>
-
-
-
